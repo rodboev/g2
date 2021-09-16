@@ -1,8 +1,7 @@
-const chalk = require('chalk');
-
 const betMultiplier = 1;
 const startingBalance = 300;
 const tableLimit = 500;
+const iterations = 200;
 
 let currentBet = 1 * betMultiplier;
 let balance = startingBalance;
@@ -16,29 +15,17 @@ const getWinOrLoss = () => {
     return 'L';
 }
 
-const iterations = 1000;
-
-function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-let lastResult;
-
 let bet = {};
 (async () => {
   let i = 0;
-  console.log(`#\tBet\tW/L\tNet\tLeft\tBalance`);
+  console.log(`Turn\tBet\tW/L\tNet\tAccumL\tBalance`);
   do {
-    lastResult = getWinOrLoss();
-
     bet = {
       number: i,
       amount: currentBet,
-      result: lastResult
+      result: getWinOrLoss()
     };
-    if (lastResult === 'L') {
+    if (bet.result === 'L') {
       bet.cleared = false;
       bet.net = -bet.amount;
     }
@@ -58,52 +45,43 @@ let bet = {};
       return loss;
     }
     const getUnclearedCount = bets => bets.filter(bet => bet.cleared === false).length;
+    bet.unclearedCount = getUnclearedCount(bets);
 
     let firstUncleared = findFirstUncleared(bets);
     let lastUncleared = findLastUncleared(bets);
-    if (lastResult === 'W') {
+    if (bet.result === 'W') {
       // clear first loss
       firstUncleared && (firstUncleared.cleared = true);
       // clear last loss
       lastUncleared && (lastUncleared.cleared = true);
       // if no unclear, reset bet to 1
-      if (getUnclearedCount(bets) === 0) {
-        currentBet = 1 * betMultiplier;
-      }
     }
 
     // refresh uncleared
     firstUncleared = findFirstUncleared(bets);
     lastUncleared = findLastUncleared(bets);
-    bets[bets.length - 1].unclearedCount = getUnclearedCount(bets);
+    bet.unclearedCount = getUnclearedCount(bets);
 
     // set new bet based on 1 or 2 uncleared
-    if (firstUncleared) {
-      if (firstUncleared !== lastUncleared) {
-        currentBet = firstUncleared.amount + lastUncleared.amount;
-      }
-      else {
-        currentBet = firstUncleared.amount;
-      }
+    if (bet.unclearedCount === 0) {
+      currentBet = 1 * betMultiplier;
+    }
+    else if (bet.unclearedCount === 1) {
+      currentBet = firstUncleared.amount;
+    }
+    else { // 2 or more uncleared
+      currentBet = firstUncleared.amount + lastUncleared.amount;
     }
 
-    // for (const bet of bets) {
-      let netBetFormatted = bet.net.toString().padStart(2, ' ');
-      if (bet.cleared) {
-        netBetFormatted = chalk.strikethrough(netBetFormatted);
-      }
-      console.log(
-        `${bet.number}\t` +
-        `${bet.amount.toString().padStart(2, ' ')}\t` +
-        `${bet.result}\t` +
-        `${netBetFormatted}\t` +
-        `${bet.unclearedCount}\t` +
-        `${bet.balance}`
-      );
-    // }
+    console.log(
+      `${bet.number}\t` +
+      `${bet.amount.toString().padStart(2, ' ')}\t` +
+      `${bet.result}\t` +
+      `${bet.net.toString().padStart(2, ' ')}\t` +
+      `${bet.unclearedCount}\t` +
+      `${bet.balance}`
+    );
 
-    // await sleep(10);
-    // on last line, print stats
     i++;
   } while ((i <= iterations || bet.unclearedCount > 0) && bet.amount <= tableLimit && bet.balance > 0);
 
@@ -118,3 +96,4 @@ let bet = {};
 
   console.log(`\n$${balance}, W: ${stats.wins}, L: ${stats.losses}, ratio: ${(stats.winLossRatio * 100).toFixed(0)}%`);
 })();
+
