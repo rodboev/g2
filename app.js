@@ -1,7 +1,7 @@
 const betMultiplier = 1;
 let balance = 5000;
 const tableLimit = 500;
-const iterations = 1000;
+const iterations = 200;
 const baseBet = 1;
 const boostBet = 1; // increment bet after first loss
 
