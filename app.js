@@ -1,7 +1,8 @@
 const betMultiplier = 1;
-const startingBalance = 300;
+const startingBalance = 5000;
 const tableLimit = 500;
-const iterations = 200;
+const iterations = 1000;
+const boostBet = 1; // increment bet after first loss
 
 let currentBet = 1 * betMultiplier;
 let balance = startingBalance;
@@ -67,7 +68,7 @@ let bet = {};
       currentBet = 1 * betMultiplier;
     }
     else if (bet.unclearedCount === 1) {
-      currentBet = firstUncleared.amount;
+      currentBet = (boostBet * betMultiplier) + firstUncleared.amount;
     }
     else { // 2 or more uncleared
       currentBet = firstUncleared.amount + lastUncleared.amount;
